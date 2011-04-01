@@ -2,11 +2,11 @@
 
 public class Vector : IVector
 {
-    double[] components;
-    readonly int count;
+    readonly double[] components;
+
     public int Count
     {
-        get { return count; }
+        get { return components.Length; }
     }
 
     public double this[int i]
@@ -16,11 +16,12 @@ public class Vector : IVector
 
     public Vector(double[] components)
     {
-        count = components.Length;
-        this.components = components;
+        this.components = new double[components.Length];
+        for (int i = 0; i < Count; i++)
+            this.components[i] = components[i];
     }
 
-    #region INSTANCE METHODS
+    #region Instance methods
     public Vector Add(IVector v)
     {
         return Add(this, v);
@@ -52,7 +53,7 @@ public class Vector : IVector
     }
     #endregion
 
-    #region STATIC METHODS
+    #region Static methods
     public static Vector Add(IVector a, IVector b)
     {
         if (a.Count != b.Count) throw new ArgumentException();
@@ -85,9 +86,14 @@ public class Vector : IVector
         return new Vector(components);
 
     }
+
+    public static Vector Zero(int count)
+    {
+        return new Vector(new double[count]);
+    }
     #endregion
 
-    #region OPERATORS
+    #region Operators
     public static Vector operator +(Vector a, Vector b)
     {
         return a.Add(b);

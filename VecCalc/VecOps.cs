@@ -84,6 +84,13 @@ public static class VecOps
         return a.Subtract(a.ProjectionOnto(b));
     }
 
+    public static bool IsZero(this IVector v)
+    {
+        for (int i = 0; i < v.Count; i++)
+            if (v[i] != 0) return false;
+        return true;
+    }
+
     public static string ToString(this IVector v)
     {
         string s = "<";

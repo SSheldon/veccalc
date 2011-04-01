@@ -2,16 +2,24 @@
 
 public class Matrix
 {
-    IVector[] rows;
+    private IVector[] rows;
 
     public Matrix(IVector[] rows)
     {
         for (int i = 1; i < rows.Length; i++)
             if (rows[i].Count != rows[0].Count)
                 throw new ArgumentException();
-        this.rows = rows; //do a deep copy, lazy ass
+        this.rows = new IVector[rows.Length];
+        for (int i = 0; i < Height; i++)
+            this.rows[i] = rows[i]; //it's okay, vectors are immutable
     }
 
+    public Matrix(IVector v)
+    {
+        rows = new IVector[1] { v };
+    }
+
+    #region Accessors
     public int Height
     {
         get { return rows.Length; }
@@ -27,7 +35,7 @@ public class Matrix
         return rows[row];
     }
 
-    IVector Col(int col)
+    public IVector Col(int col)
     {
         double[] temp = new double[Height];
         for (int i = 0; i < temp.Length; i++)
@@ -35,7 +43,22 @@ public class Matrix
         return new Vector(temp);
     }
 
-    Matrix Multiply(Matrix other)
+    IVector[] Cols()
+    {
+        IVector[] cols = new IVector[Width];
+        for (int c = 0; c < Width; c++)
+            cols[c] = Col(c);
+        return cols;
+    }
+    #endregion
+
+    #region Methods - Matrix operations
+    public Matrix Transpose()
+    {
+        return new Matrix(Cols());
+    }
+
+    public Matrix MultiplyTo(Matrix other)
     {
         IVector[] tempCols = new IVector[Width];
         for (int c = 0; c < other.Width; c++)
@@ -51,59 +74,55 @@ public class Matrix
         return new Matrix(tempCols).Transpose();
     }
 
-    IVector Multiply(IVector v)
+    public IVector MultiplyTo(IVector v)
     {
+        if (v.Count != this.Width) throw new ArgumentException();
         double[] temp = new double[Height];
         for (int i = 0; i < temp.Length; i++)
-            temp[i] = v.Dot(this.Row(i));
+            temp[i] = Row(i).Dot(v);
         return new Vector(temp);
     }
+    #endregion
 
-    Matrix Transpose()
+    #region Mutators
+    public void Swap(int i, int j)
     {
-        IVector[] temp = new IVector[Width];
-        for (int i = 0; i < temp.Length; i++)
-            temp[i] = Col(i);
-        return new Matrix(temp);
+        IVector temp = rows[i];
+        rows[i] = rows[j];
+        rows[j] = temp;
     }
 
-    bool IsRowEchelon()
+    public void MultiplyRow(int i, double c)
     {
-        return true;
+        rows[i] = rows[i].Multiply(c);
     }
 
-    bool IsReducedRowEchelon()
+    public void AddMultiple(int i, int other, double c)
     {
-        return true;
+        rows[i] = rows[i].Add(rows[other].Multiply(c));
     }
-}
 
-public class AugmmentedMatrix
-{
-    IVector[] rows;
-
-    public AugmmentedMatrix(Matrix a, Matrix b)
+    public void SubtractMultiple(int i, int other, double c)
     {
+        rows[i] = rows[i].Subtract(rows[other].Multiply(c));
     }
 
     public void GaussianEliminate()
     {
-        for (int i = 0, j = 0; i < rows.Length && j < rows[i].Count; j++, i++)
+        for (int i = 0, j = 0; i < Height && j < Width; j++, i++)
         {
             //Find pivot in column j, starting in row i:
             int maxi = i;
-            for (int k = i + 1; k < rows.Length; k++)
+            for (int k = i + 1; k < Height; k++)
                 if (Math.Abs(rows[k][j]) > Math.Abs(rows[maxi][j]))
                     maxi = k;
             if (rows[maxi][j] != 0.0)
             {
-                IVector temp = rows[i];
-                rows[i] = rows[maxi];
-                rows[maxi] = temp;
+                Swap(i, maxi);
                 //Now A[i,j] will contain the old value of A[maxi,j]
-                rows[i].Multiply(1.0 / rows[i][j]);
+                MultiplyRow(i, 1.0 / Row(i)[j]);
                 for (int u = i + 1; u < rows.Length; u++)
-                    rows[u] = rows[u].Subtract(rows[i].Multiply(rows[u][j]));
+                    SubtractMultiple(u, i, Row(u)[j]);
                 //Now A[u,j] will be 0, since A[u,j] - A[i,j] * A[u,j] = A[u,j] - 1 * A[u,j] = 0.
             }
         }
@@ -113,5 +132,187 @@ public class AugmmentedMatrix
     {
         GaussianEliminate();
         //other stuff
+        for (int i = Height - 1; i >= 0; i--)
+        {
+            int leading1 = 0;
+            for (int j = 0; j < Width; j++)
+            {
+                if (j != 0)
+                {
+                    leading1 = j;
+                    break;
+                }
+            }
+
+            for (int i2 = i - 1; i2 >= 0; i2--)
+            {
+                SubtractMultiple(i2, i, Row(i2)[leading1]);
+            }
+        }
+    }
+    #endregion
+
+    #region Methods - Matrix properties
+    public bool IsRowEchelon()
+    {
+        int leading = -1;
+        for (int i = 0; i < Height; i++)
+        {
+            for (int j = 0; j < Width; j++)
+            {
+                if (Row(i)[j] != 0)
+                {
+                    if (j <= leading) return false;
+                    else
+                    {
+                        leading = j;
+                        break;
+                    }
+                }
+            }
+        }
+        return true;
+    }
+
+    public bool IsReducedRowEchelon()
+    {
+        int leading = -1;
+        for (int i = 0; i < Height; i++)
+        {
+            bool foundLeading1 = false;
+            for (int j = 0; j < Width; j++)
+            {
+                if (Row(i)[j] != 0)
+                {
+                    if (Row(i)[j] != 1) return false;
+                    else
+                    {
+                        //found a 1! burn her!
+                        if (foundLeading1 || j <= leading) return false;
+                        else
+                        {
+                            leading = j;
+                            foundLeading1 = true;
+                        }
+                    }
+                }
+            }
+        }
+        return true;
+    }
+
+    public bool LinearlyIndependent()
+    {
+        //reduce and see if there are zero rows
+        Matrix temp = new Matrix(this.rows);
+        temp.GaussJordanEliminate();
+        return !temp.Row(temp.Height - 1).IsZero();
+    }
+    #endregion
+
+    //TODO: make class to represent bases
+    //get Kernel
+    //get Image
+    //get rank
+}
+
+public class AugmmentedMatrix : Matrix
+{
+    int w1;
+
+    public AugmmentedMatrix(Matrix a, Matrix b)
+        : base(Combine(a, b))
+    {
+        w1 = a.Width;
+    }
+
+    static IVector[] Combine(Matrix a, Matrix b)
+    {
+        int w1 = a.Width;
+        int w2 = b.Width;
+        IVector[] temp = new IVector[a.Height];
+        for (int i = 0; i < temp.Length; i++)
+        {
+            double[] vec = new double[w1 + w2];
+            for (int j = 0; j < vec.Length; j++)
+                vec[j] = (j < w1 ? a.Row(i)[j] : b.Row(i)[j - w1]);
+            temp[i] = new Vector(vec);
+        }
+        return temp;
+    }
+
+    Matrix MatrixA()
+    {
+        IVector[] temp = new IVector[Height];
+        for (int i = 0; i < Height; i++)
+        {
+            double[] vec = new double[w1];
+            for (int j = 0; j < w1; j++)
+                vec[j] = Row(i)[j];
+            temp[i] = new Vector(vec);
+        }
+        return new Matrix(temp);
+    }
+
+    Matrix MatrixB()
+    {
+        int w2 = Width - w1;
+        IVector[] temp = new IVector[Height];
+        for (int i = 0; i < Height; i++)
+        {
+            double[] vec = new double[w2];
+            for (int j = 0; j < w2; j++)
+                vec[j] = Row(i)[w1 + j];
+            temp[i] = new Vector(vec);
+        }
+        return new Matrix(temp);
+    }
+}
+
+public class LinearSystem
+{
+    AugmmentedMatrix augmat;
+
+    public LinearSystem(Matrix a, IVector b)
+    {
+        augmat = new AugmmentedMatrix(a, new Matrix(b));
+        augmat.GaussJordanEliminate();
+    }
+
+    public bool IsInconsistent()
+    {
+        for (int i = augmat.Height - 1; i >= 0; i--)
+        {
+            //find last nonzero coefficient
+            int lastNonZero = -1;
+            for (int j = augmat.Width - 2; j >= 0; j--)
+                if (augmat.Row(i)[j] != 0) lastNonZero = j;
+
+            if (lastNonZero == -1)
+            {
+                //preceding row was all 0s, so if last entry isn't 0, inconsistent
+                if (augmat.Row(i)[augmat.Width - 1] != 0) return true;
+            }
+            else if (lastNonZero >= 0) break; //once a row has more than 0s, all above will too
+        }
+        return false;
+    }
+
+    public bool HasFreeVariables()
+    {
+        for (int i = 0; i < augmat.Width - 1; i++)
+            if (augmat.Row(i)[i] != 1) return false;
+        return true;
+    }
+
+    public IVector Solve()
+    {
+        if (IsInconsistent() || HasFreeVariables()) return null;
+        else return augmat.Col(augmat.Width - 1);
+    }
+
+    public static IVector Solve(Matrix a, IVector b)
+    {
+        return new LinearSystem(a, b).Solve();
     }
 }
