@@ -58,6 +58,11 @@ public class Matrix
         return new Matrix(Cols());
     }
 
+    public Matrix MultiplyBy(Matrix other)
+    {
+        return other.MultiplyTo(this);
+    }
+
     public Matrix MultiplyTo(Matrix other)
     {
         IVector[] tempCols = new IVector[Width];
@@ -271,11 +276,22 @@ public class AugmmentedMatrix : Matrix
 
 public class LinearSystem
 {
-    AugmmentedMatrix augmat;
+    Matrix augmat;
 
     public LinearSystem(Matrix a, IVector b)
     {
-        augmat = new AugmmentedMatrix(a, new Matrix(b));
+        int w1 = a.Width;
+        IVector[] temp = new IVector[a.Height];
+        for (int i = 0; i < temp.Length; i++)
+        {
+            double[] vec = new double[w1 + 1];
+            for (int j = 0; j < w1; j++)
+                vec[j] = a.Row(i)[j];
+            vec[w1] = b[i];
+            temp[i] = new Vector(vec);
+        }
+
+        augmat = new Matrix(temp);
         augmat.GaussJordanEliminate();
     }
 
@@ -309,6 +325,17 @@ public class LinearSystem
     {
         if (IsInconsistent() || HasFreeVariables()) return null;
         else return augmat.Col(augmat.Width - 1);
+    }
+
+    public IVector LeastSquaresSolve()
+    {
+        IVector[] cols = new IVector[augmat.Width - 1];
+        for (int i = 0; i < cols.Length; i++)
+            cols[i] = augmat.Col(i);
+        Matrix temp = augmat.MultiplyBy(new Matrix(cols));
+        cols = null;
+        temp.GaussJordanEliminate();
+        return temp.Col(temp.Width - 1);
     }
 
     public static IVector Solve(Matrix a, IVector b)
