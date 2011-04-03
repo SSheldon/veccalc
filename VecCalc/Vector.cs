@@ -14,7 +14,7 @@ public class Vector : IVector
         get { return components[i]; }
     }
 
-    public Vector(double[] components)
+    public Vector(params double[] components)
     {
         this.components = new double[components.Length];
         for (int i = 0; i < Count; i++)
@@ -50,6 +50,17 @@ public class Vector : IVector
     IVector IVector.Multiply(double c)
     {
         return Multiply(c);
+    }
+
+    public override string ToString()
+    {
+        string s = "<";
+        for (int i = 0; i < components.Length; i++)
+        {
+            if (i > 0) s += ",";
+            s += components[i].ToString();
+        }
+        return s + ">";
     }
     #endregion
 

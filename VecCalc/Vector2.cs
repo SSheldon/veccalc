@@ -89,4 +89,9 @@ public struct Vector2 : IVector
     {
         return Multiply(c);
     }
+
+    public override string ToString()
+    {
+        return "<" + x + "," + y + ">";
+    }
 }

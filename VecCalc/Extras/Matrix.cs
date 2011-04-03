@@ -4,7 +4,7 @@ public class Matrix
 {
     private IVector[] rows;
 
-    public Matrix(IVector[] rows)
+    public Matrix(params IVector[] rows)
     {
         for (int i = 1; i < rows.Length; i++)
             if (rows[i].Count != rows[0].Count)
@@ -12,11 +12,6 @@ public class Matrix
         this.rows = new IVector[rows.Length];
         for (int i = 0; i < Height; i++)
             this.rows[i] = rows[i]; //it's okay, vectors are immutable
-    }
-
-    public Matrix(IVector v)
-    {
-        rows = new IVector[1] { v };
     }
 
     #region Accessors
@@ -30,9 +25,9 @@ public class Matrix
         get { return rows[0].Count; }
     }
 
-    public IVector Row(int row)
+    public IVector this[int row]
     {
-        return rows[row];
+        get { return rows[row]; }
     }
 
     public IVector Col(int col)
@@ -72,7 +67,7 @@ public class Matrix
             double[] tempVals = new double[this.Height];
             for (int r = 0; r < this.Height; r++)
             {
-                tempVals[r] = Row(r).Dot(col);
+                tempVals[r] = this[r].Dot(col);
             }
             tempCols[c] = new Vector(tempVals);
         }
@@ -84,7 +79,7 @@ public class Matrix
         if (v.Count != this.Width) throw new ArgumentException();
         double[] temp = new double[Height];
         for (int i = 0; i < temp.Length; i++)
-            temp[i] = Row(i).Dot(v);
+            temp[i] = this[i].Dot(v);
         return new Vector(temp);
     }
     #endregion
@@ -125,9 +120,9 @@ public class Matrix
             {
                 Swap(i, maxi);
                 //Now A[i,j] will contain the old value of A[maxi,j]
-                MultiplyRow(i, 1.0 / Row(i)[j]);
+                MultiplyRow(i, 1.0 / this[i][j]);
                 for (int u = i + 1; u < rows.Length; u++)
-                    SubtractMultiple(u, i, Row(u)[j]);
+                    SubtractMultiple(u, i, this[u][j]);
                 //Now A[u,j] will be 0, since A[u,j] - A[i,j] * A[u,j] = A[u,j] - 1 * A[u,j] = 0.
             }
         }
@@ -142,7 +137,7 @@ public class Matrix
             int leading1 = 0;
             for (int j = 0; j < Width; j++)
             {
-                if (j != 0)
+                if (this[i][j] != 0)
                 {
                     leading1 = j;
                     break;
@@ -151,7 +146,7 @@ public class Matrix
 
             for (int i2 = i - 1; i2 >= 0; i2--)
             {
-                SubtractMultiple(i2, i, Row(i2)[leading1]);
+                SubtractMultiple(i2, i, this[i2][leading1]);
             }
         }
     }
@@ -165,7 +160,7 @@ public class Matrix
         {
             for (int j = 0; j < Width; j++)
             {
-                if (Row(i)[j] != 0)
+                if (this[i][j] != 0)
                 {
                     if (j <= leading) return false;
                     else
@@ -187,9 +182,9 @@ public class Matrix
             bool foundLeading1 = false;
             for (int j = 0; j < Width; j++)
             {
-                if (Row(i)[j] != 0)
+                if (this[i][j] != 0)
                 {
-                    if (Row(i)[j] != 1) return false;
+                    if (this[i][j] != 1) return false;
                     else
                     {
                         //found a 1! burn her!
@@ -211,7 +206,7 @@ public class Matrix
         //reduce and see if there are zero rows
         Matrix temp = new Matrix(this.rows);
         temp.GaussJordanEliminate();
-        return !temp.Row(temp.Height - 1).IsZero();
+        return !temp[temp.Height - 1].IsZero();
     }
     #endregion
 
@@ -219,6 +214,15 @@ public class Matrix
     //get Kernel
     //get Image
     //get rank
+
+    public override string ToString()
+    {
+        string temp = "";
+        if (Height > 0) temp = this[0].ToString();
+        for (int i = 1; i < Height; i++)
+            temp += "\n" + this[i].ToString();
+        return temp;
+    }
 }
 
 public class AugmmentedMatrix : Matrix
@@ -240,7 +244,7 @@ public class AugmmentedMatrix : Matrix
         {
             double[] vec = new double[w1 + w2];
             for (int j = 0; j < vec.Length; j++)
-                vec[j] = (j < w1 ? a.Row(i)[j] : b.Row(i)[j - w1]);
+                vec[j] = (j < w1 ? a[i][j] : b[i][j - w1]);
             temp[i] = new Vector(vec);
         }
         return temp;
@@ -253,7 +257,7 @@ public class AugmmentedMatrix : Matrix
         {
             double[] vec = new double[w1];
             for (int j = 0; j < w1; j++)
-                vec[j] = Row(i)[j];
+                vec[j] = this[i][j];
             temp[i] = new Vector(vec);
         }
         return new Matrix(temp);
@@ -267,7 +271,7 @@ public class AugmmentedMatrix : Matrix
         {
             double[] vec = new double[w2];
             for (int j = 0; j < w2; j++)
-                vec[j] = Row(i)[w1 + j];
+                vec[j] = this[i][w1 + j];
             temp[i] = new Vector(vec);
         }
         return new Matrix(temp);
@@ -286,7 +290,7 @@ public class LinearSystem
         {
             double[] vec = new double[w1 + 1];
             for (int j = 0; j < w1; j++)
-                vec[j] = a.Row(i)[j];
+                vec[j] = a[i][j];
             vec[w1] = b[i];
             temp[i] = new Vector(vec);
         }
@@ -302,12 +306,12 @@ public class LinearSystem
             //find last nonzero coefficient
             int lastNonZero = -1;
             for (int j = augmat.Width - 2; j >= 0; j--)
-                if (augmat.Row(i)[j] != 0) lastNonZero = j;
+                if (augmat[i][j] != 0) lastNonZero = j;
 
             if (lastNonZero == -1)
             {
                 //preceding row was all 0s, so if last entry isn't 0, inconsistent
-                if (augmat.Row(i)[augmat.Width - 1] != 0) return true;
+                if (augmat[i][augmat.Width - 1] != 0) return true;
             }
             else if (lastNonZero >= 0) break; //once a row has more than 0s, all above will too
         }
@@ -316,8 +320,10 @@ public class LinearSystem
 
     public bool HasFreeVariables()
     {
+        //must be if there are less equations than variables
+        if (augmat.Height < augmat.Width - 1) return true;
         for (int i = 0; i < augmat.Width - 1; i++)
-            if (augmat.Row(i)[i] != 1) return false;
+            if (augmat[i][i] != 1) return false;
         return true;
     }
 

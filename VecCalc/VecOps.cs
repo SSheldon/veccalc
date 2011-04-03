@@ -90,15 +90,4 @@ public static class VecOps
             if (v[i] != 0) return false;
         return true;
     }
-
-    public static string ToString(this IVector v)
-    {
-        string s = "<";
-        for (int i = 0; i < v.Count; i++)
-        {
-            if (i > 0) s += ",";
-            s += v[i];
-        }
-        return s + ">";
-    }
 }
