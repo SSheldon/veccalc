@@ -52,6 +52,14 @@ public class Vector : IVector
         return Multiply(c);
     }
 
+    public bool Equals(IVector v)
+    {
+        if (v.Count != Count) return false;
+        for (int i = 0; i < Count; i++)
+            if (v[i] != this[i]) return false;
+        return true;
+    }
+
     public override string ToString()
     {
         string s = "<";

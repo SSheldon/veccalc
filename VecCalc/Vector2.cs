@@ -30,12 +30,12 @@ public struct Vector2 : IVector
 
     public double X
     {
-        get { return this[0]; }
+        get { return x; }
     }
 
     public double Y
     {
-        get { return this[1]; }
+        get { return y; }
     }
 
     public Vector2 Add(IVector v)
@@ -51,6 +51,12 @@ public struct Vector2 : IVector
     public Vector2 Multiply(double c)
     {
         return new Vector2(x * c, y * c);
+    }
+
+    public bool Equals(IVector v)
+    {
+        if (v.Count != 2) return false;
+        else return v[0] == x && v[1] == y;
     }
 
     public static Vector2 One

@@ -1,6 +1,6 @@
 ﻿using System;
 
-public interface IVector
+public interface IVector : IEquatable<IVector>
 {
     double this[int i]
     {

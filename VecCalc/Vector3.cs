@@ -83,6 +83,12 @@ public struct Vector3 : IVector
         return new Vector3(x * c, y * c, z * c);
     }
 
+    public bool Equals(IVector v)
+    {
+        if (v.Count != 3) return false;
+        else return v[0] == x && v[1] == y && v[2] == z;
+    }
+
     IVector IVector.Add(IVector v)
     {
         return Add(v);
