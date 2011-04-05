@@ -322,9 +322,67 @@ public class LinearSystem
     {
         //must be if there are less equations than variables
         if (augmat.Height < augmat.Width - 1) return true;
+        //so we know height >= width - 1
         for (int i = 0; i < augmat.Width - 1; i++)
-            if (augmat[i][i] != 1) return false;
-        return true;
+            if (augmat[i][i] != 1) return true;
+        return false;
+    }
+
+    public IVector[] SolveBasis()
+    {
+        if (IsInconsistent() || !HasFreeVariables()) return null;
+
+        //number of free vars = width - number of nonzero rows
+        //solution vector has width rows
+        //if column c of the matrix has no leading 1s, v[c] has free variables
+        //else v[c] is a bound variable
+        //basis will have 1 vector for each free variable
+        //for vector from free variable a:
+        //    component a is a 1
+        //    components corresponding to free variables are 0
+        //    components corresponding to bound variables:
+        //        iterate through rows, row[a] is next open component
+
+        bool[] hasLeading1 = new bool[augmat.Width - 1];
+        int boundVars = 0;
+        for (int i = 0; i < augmat.Height; i++)
+        {
+            for (int j = 0; j < augmat.Width - 1; j++)
+            {
+                if (augmat[i][j] != 0)
+                {
+                    hasLeading1[j] = true;
+                    boundVars++;
+                    break;
+                }
+            }
+        }
+
+        IVector[] basis = new IVector[augmat.Width - 1 - boundVars];
+        int colOfCurrentFree = 0;
+        for (int i = 0; i < basis.Length; i++)
+        {
+            while (hasLeading1[colOfCurrentFree]) colOfCurrentFree++;
+            double[] temp = new double[augmat.Width - 1];
+            int boundsSoFar = 0;
+            for (int j = 0; j < temp.Length; j++)
+            {
+                if (j == colOfCurrentFree)
+                    temp[j] = 1; //j == the col this free var comes from
+                else if (!hasLeading1[j])
+                    temp[j] = 0; //other free vars are being accounted for elsewhere
+                else
+                {
+                    //we hafta get it from augmat
+                    temp[j] = -augmat[boundsSoFar][colOfCurrentFree];
+                    boundsSoFar++;
+                }
+            }
+            basis[i] = new Vector(temp);
+            colOfCurrentFree++;
+        }
+
+        return basis;
     }
 
     public IVector Solve()
