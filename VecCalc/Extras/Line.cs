@@ -1,14 +1,13 @@
 ﻿using System;
 
-public class Line
+public class Line : Flat
 {
-    IVector anchor, direction;
-
     public Line(IVector anchor, IVector direction)
+        : base(new SubSpace(new IVector[] { direction }), anchor) { }
+
+    private IVector direction
     {
-        if (anchor.Count != direction.Count) throw new ArgumentException();
-        this.anchor = anchor;
-        this.direction = direction;
+        get { return subspace.Basis(0); }
     }
 
     //public bool Contains(IVector v)

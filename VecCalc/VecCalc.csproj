@@ -35,8 +35,10 @@
   </PropertyGroup>
   <ItemGroup>
     <Compile Include="Calculator.cs" />
+    <Compile Include="Extras\Flat.cs" />
     <Compile Include="Extras\Line.cs" />
     <Compile Include="Extras\Matrix.cs" />
+    <Compile Include="Extras\SubSpace.cs" />
     <Compile Include="IVector.cs" />
     <Compile Include="VecOps.cs" />
     <Compile Include="Vector.cs" />

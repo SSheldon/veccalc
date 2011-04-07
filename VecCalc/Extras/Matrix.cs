@@ -22,7 +22,7 @@ public class Matrix
 
     public int Width
     {
-        get { return rows[0].Count; }
+        get { return (Height > 0 ? rows[0].Count : 0); }
     }
 
     public IVector this[int row]
@@ -203,17 +203,119 @@ public class Matrix
 
     public bool LinearlyIndependent()
     {
-        //reduce and see if there are zero rows
-        Matrix temp = new Matrix(this.rows);
-        temp.GaussJordanEliminate();
-        return !temp[temp.Height - 1].IsZero();
+        if (IsReducedRowEchelon())
+            return !this[Height - 1].IsZero();
+        else
+        {
+            //reduce and see if there are zero rows
+            Matrix temp = new Matrix(this.rows);
+            temp.GaussJordanEliminate();
+            return !temp[temp.Height - 1].IsZero();
+        }
     }
-    #endregion
 
     //TODO: make class to represent bases
-    //get Kernel
-    //get Image
-    //get rank
+    public SubSpace Kernel()
+    {
+        if (!IsReducedRowEchelon())
+        {
+            Matrix temp = new Matrix(this.rows);
+            temp.GaussJordanEliminate();
+            return temp.Kernel();
+        }
+        //number of free vars = width - number of nonzero rows
+        //solution vector has width rows
+        //if column c of the matrix has no leading 1s, v[c] has free variables
+        //else v[c] is a bound variable
+        //basis will have 1 vector for each free variable
+        //for vector from free variable a:
+        //    component a is a 1
+        //    components corresponding to free variables are 0
+        //    components corresponding to bound variables:
+        //        iterate through rows, row[a] is next open component
+
+        bool[] hasLeading1 = new bool[Width];
+        int boundVars = 0;
+        for (int i = 0; i < Height; i++)
+        {
+            for (int j = 0; j < Width; j++)
+            {
+                if (this[i][j] != 0)
+                {
+                    hasLeading1[j] = true;
+                    boundVars++;
+                    break;
+                }
+            }
+        }
+
+        IVector[] basis = new IVector[Width - boundVars];
+        int colOfCurrentFree = 0;
+        for (int i = 0; i < basis.Length; i++)
+        {
+            while (hasLeading1[colOfCurrentFree]) colOfCurrentFree++;
+            double[] temp = new double[Width];
+            int boundsSoFar = 0;
+            for (int j = 0; j < temp.Length; j++)
+            {
+                if (j == colOfCurrentFree)
+                    temp[j] = 1; //j == the col this free var comes from
+                else if (!hasLeading1[j])
+                    temp[j] = 0; //other free vars are being accounted for elsewhere
+                else
+                {
+                    //we hafta get it from augmat
+                    temp[j] = -this[boundsSoFar][colOfCurrentFree];
+                    boundsSoFar++;
+                }
+            }
+            basis[i] = new Vector(temp);
+            colOfCurrentFree++;
+        }
+
+        return new SubSpace(basis);
+    }
+
+    public SubSpace Image()
+    {
+        Matrix working = this.Transpose();
+        working.GaussJordanEliminate();
+
+        int dim = 0;
+        for (int i = 0; i < working.Height; i++)
+        {
+            if (!working[i].IsZero()) dim = i + 1;
+        }
+        IVector[] temp = new IVector[dim];
+        for (int i = 0; i < temp.Length; i++)
+        {
+            temp[i] = working[i];
+        }
+
+        return new SubSpace(temp);
+    }
+
+    public int Rank()
+    {
+        if (IsReducedRowEchelon())
+        {
+            int nonZeroRows = 0;
+            for (int i = 0; i < Height; i++)
+            {
+                if (!this[i].IsZero()) nonZeroRows++;
+                else break;
+            }
+            //should be the same as Image().Dimension and Kernel().Dimension - math!
+            return nonZeroRows;
+        }
+        else
+        {
+            Matrix temp = new Matrix(this.rows);
+            temp.GaussJordanEliminate();
+            return temp.Rank();
+        }
+    }
+    #endregion
 
     public override string ToString()
     {
@@ -328,61 +430,21 @@ public class LinearSystem
         return false;
     }
 
-    public IVector[] SolveBasis()
+    public Flat SolveBasis()
     {
         if (IsInconsistent() || !HasFreeVariables()) return null;
 
-        //number of free vars = width - number of nonzero rows
-        //solution vector has width rows
-        //if column c of the matrix has no leading 1s, v[c] has free variables
-        //else v[c] is a bound variable
-        //basis will have 1 vector for each free variable
-        //for vector from free variable a:
-        //    component a is a 1
-        //    components corresponding to free variables are 0
-        //    components corresponding to bound variables:
-        //        iterate through rows, row[a] is next open component
-
-        bool[] hasLeading1 = new bool[augmat.Width - 1];
-        int boundVars = 0;
+        IVector[] temp = new IVector[augmat.Height];
         for (int i = 0; i < augmat.Height; i++)
         {
+            double[] vec = new double[augmat.Width - 1];
             for (int j = 0; j < augmat.Width - 1; j++)
-            {
-                if (augmat[i][j] != 0)
-                {
-                    hasLeading1[j] = true;
-                    boundVars++;
-                    break;
-                }
-            }
+                vec[j] = augmat[i][j];
+            temp[i] = new Vector(vec);
         }
+        Matrix working = new Matrix(temp);
 
-        IVector[] basis = new IVector[augmat.Width - 1 - boundVars];
-        int colOfCurrentFree = 0;
-        for (int i = 0; i < basis.Length; i++)
-        {
-            while (hasLeading1[colOfCurrentFree]) colOfCurrentFree++;
-            double[] temp = new double[augmat.Width - 1];
-            int boundsSoFar = 0;
-            for (int j = 0; j < temp.Length; j++)
-            {
-                if (j == colOfCurrentFree)
-                    temp[j] = 1; //j == the col this free var comes from
-                else if (!hasLeading1[j])
-                    temp[j] = 0; //other free vars are being accounted for elsewhere
-                else
-                {
-                    //we hafta get it from augmat
-                    temp[j] = -augmat[boundsSoFar][colOfCurrentFree];
-                    boundsSoFar++;
-                }
-            }
-            basis[i] = new Vector(temp);
-            colOfCurrentFree++;
-        }
-
-        return basis;
+        return new Flat(working.Kernel(), augmat.Col(augmat.Width - 1));
     }
 
     public IVector Solve()
