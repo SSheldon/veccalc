@@ -38,6 +38,7 @@ public static class VecOps
             sum += (a[i] - b[i]) * (a[i] - b[i]);
         }
         return sum;
+        //return a.Subtract(b).LengthSquared();
     }
 
     public static double Distance(this IVector a, IVector b)
@@ -76,7 +77,7 @@ public static class VecOps
 
     public static IVector ProjectionOnto(this IVector a, IVector b)
     {
-        return b.Multiply(Dot(a, b) / b.LengthSquared());
+        return b.Multiply(a.Dot(b) / b.LengthSquared());
     }
 
     public static IVector OrthogonalComplementTo(this IVector a, IVector b)
@@ -89,5 +90,21 @@ public static class VecOps
         for (int i = 0; i < v.Count; i++)
             if (v[i] != 0) return false;
         return true;
+    }
+
+    public static bool LinearlyIndependentOf(this IVector v, params IVector[] vecs)
+    {
+        IVector[] temp = new IVector[vecs.Length + 1];
+        Array.Copy(vecs, temp, vecs.Length);
+        temp[vecs.Length] = v;
+        return VecOps.LinearlyIndependent(temp);
+    }
+
+    public static bool LinearlyIndependent(params IVector[] vecs)
+    {
+        //reduce and see if there are zero rows
+        Matrix temp = new Matrix(vecs);
+        temp.GaussJordanEliminate();
+        return !temp[temp.Height - 1].IsZero();
     }
 }

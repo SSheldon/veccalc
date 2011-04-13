@@ -17,8 +17,7 @@ public class Vector : IVector
     public Vector(params double[] components)
     {
         this.components = new double[components.Length];
-        for (int i = 0; i < Count; i++)
-            this.components[i] = components[i];
+        Array.Copy(components, this.components, Count);
     }
 
     #region Instance methods

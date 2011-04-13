@@ -10,8 +10,24 @@ public class Matrix
             if (rows[i].Count != rows[0].Count)
                 throw new ArgumentException();
         this.rows = new IVector[rows.Length];
-        for (int i = 0; i < Height; i++)
-            this.rows[i] = rows[i]; //it's okay, vectors are immutable
+        //it's okay to just copy, vectors are immutable
+        Array.Copy(rows, this.rows, Height);
+    }
+
+    private static Matrix FromCols(IVector[] cols)
+    {
+        //all col vectors are same length, right?
+        IVector[] rows = new IVector[cols[0].Count];
+        for (int i = 0; i < rows.Length; i++)
+        {
+            double[] temp = new double[cols.Length];
+            for (int j = 0; j < cols.Length; j++)
+            {
+                temp[j] = cols[j][i];
+            }
+            rows[i] = new Vector(temp);
+        }
+        return new Matrix(rows);
     }
 
     #region Accessors
@@ -37,29 +53,17 @@ public class Matrix
             temp[i] = rows[i][col];
         return new Vector(temp);
     }
-
-    IVector[] Cols()
-    {
-        IVector[] cols = new IVector[Width];
-        for (int c = 0; c < Width; c++)
-            cols[c] = Col(c);
-        return cols;
-    }
     #endregion
 
     #region Methods - Matrix operations
     public Matrix Transpose()
     {
-        return new Matrix(Cols());
-    }
-
-    public Matrix MultiplyBy(Matrix other)
-    {
-        return other.MultiplyTo(this);
+        return Matrix.FromCols(rows);
     }
 
     public Matrix MultiplyTo(Matrix other)
     {
+        if (other.Height != this.Width) throw new ArgumentException();
         IVector[] tempCols = new IVector[Width];
         for (int c = 0; c < other.Width; c++)
         {
@@ -71,7 +75,7 @@ public class Matrix
             }
             tempCols[c] = new Vector(tempVals);
         }
-        return new Matrix(tempCols).Transpose();
+        return Matrix.FromCols(tempCols);
     }
 
     public IVector MultiplyTo(IVector v)
@@ -199,19 +203,6 @@ public class Matrix
             }
         }
         return true;
-    }
-
-    public bool LinearlyIndependent()
-    {
-        if (IsReducedRowEchelon())
-            return !this[Height - 1].IsZero();
-        else
-        {
-            //reduce and see if there are zero rows
-            Matrix temp = new Matrix(this.rows);
-            temp.GaussJordanEliminate();
-            return !temp[temp.Height - 1].IsZero();
-        }
     }
 
     //TODO: make class to represent bases
@@ -458,7 +449,7 @@ public class LinearSystem
         IVector[] cols = new IVector[augmat.Width - 1];
         for (int i = 0; i < cols.Length; i++)
             cols[i] = augmat.Col(i);
-        Matrix temp = augmat.MultiplyBy(new Matrix(cols));
+        Matrix temp = (new Matrix(cols)).MultiplyTo(augmat);
         cols = null;
         temp.GaussJordanEliminate();
         return temp.Col(temp.Width - 1);

@@ -23,4 +23,34 @@ public class SubSpace
     {
         return bases[index];
     }
+
+    void Orthogonalize()
+    {
+        for (int i = 1; i < bases.Length; i++)
+        {
+            for (int j = 0; j < i; j++)
+            {
+                bases[i] = bases[i].OrthogonalComplementTo(bases[j]);
+            }
+        }
+    }
+
+    void Normalize()
+    {
+        for (int i = 0; i < bases.Length; i++)
+            bases[i] = bases[i].Normalize();
+    }
+
+    void OrthoNormalize()
+    {
+        Orthogonalize();
+        Normalize();
+    }
+
+    bool Contains(IVector v)
+    {
+        //true if orthogonal component = 0
+        //also true if the bases + v aren't linearly independent
+        return v.LinearlyIndependentOf(bases);
+    }
 }
