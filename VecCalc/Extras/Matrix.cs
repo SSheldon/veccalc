@@ -4,24 +4,34 @@ public class Matrix
 {
     private IVector[] rows;
 
+    #region Constructors
     public Matrix(params IVector[] rows)
+        : this(true, rows) { }
+
+    public Matrix(Matrix other)
+        : this(false, other.rows) { }
+
+    protected Matrix(bool check, IVector[] rows)
     {
-        for (int i = 1; i < rows.Length; i++)
-            if (rows[i].Count != rows[0].Count)
-                throw new ArgumentException();
+        if (check)
+        {
+            for (int i = 1; i < rows.Length; i++)
+                if (rows[i].Count != rows[0].Count)
+                    throw new ArgumentException();
+        }
+
         this.rows = new IVector[rows.Length];
         //it's okay to just copy, vectors are immutable
         Array.Copy(rows, this.rows, Height);
     }
 
-    public Matrix(Matrix other)
+    protected static Matrix FromRows(IVector[] rows)
     {
-        this.rows = new IVector[other.Height];
-        //it's okay to just copy, vectors are immutable
-        Array.Copy(other.rows, this.rows, Height);
+        //all row vectors are the same length, right?
+        return new Matrix(false, rows);
     }
 
-    private static Matrix FromCols(IVector[] cols)
+    protected static Matrix FromCols(IVector[] cols)
     {
         //all col vectors are same length, right?
         IVector[] rows = new IVector[cols[0].Count];
@@ -34,8 +44,9 @@ public class Matrix
             }
             rows[i] = new Vector(temp);
         }
-        return new Matrix(rows);
+        return FromRows(rows);
     }
+    #endregion
 
     #region Accessors
     public int Height
@@ -217,7 +228,7 @@ public class Matrix
     {
         if (!IsReducedRowEchelon())
         {
-            Matrix temp = new Matrix(this.rows);
+            Matrix temp = new Matrix(this);
             temp.GaussJordanEliminate();
             return temp.Kernel();
         }
@@ -308,7 +319,7 @@ public class Matrix
         }
         else
         {
-            Matrix temp = new Matrix(this.rows);
+            Matrix temp = new Matrix(this);
             temp.GaussJordanEliminate();
             return temp.Rank();
         }
@@ -360,7 +371,7 @@ public class AugmmentedMatrix : Matrix
                 vec[j] = this[i][j];
             temp[i] = new Vector(vec);
         }
-        return new Matrix(temp);
+        return FromRows(temp);
     }
 
     Matrix MatrixB()
@@ -374,7 +385,7 @@ public class AugmmentedMatrix : Matrix
                 vec[j] = this[i][w1 + j];
             temp[i] = new Vector(vec);
         }
-        return new Matrix(temp);
+        return FromRows(temp);
     }
 }
 

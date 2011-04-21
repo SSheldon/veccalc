@@ -2,19 +2,26 @@
 
 public class SquareMatrix : Matrix
 {
+    #region Constructors
     public SquareMatrix(params IVector[] rows)
-        : base(rows)
-    {
-        for (int i = 0; i < rows.Length; i++)
-            if (rows[i].Count != rows.Length)
-                throw new ArgumentException();
-    }
+        : this(true, rows) { }
 
     public SquareMatrix(Matrix m)
         : base(m)
     {
         if (m.Height != m.Width)
             throw new ArgumentException();
+    }
+
+    private SquareMatrix(bool check, IVector[] rows)
+        : base(false, rows)
+    {
+        if (check)
+        {
+            for (int i = 0; i < rows.Length; i++)
+                if (rows[i].Count != rows.Length)
+                    throw new ArgumentException();
+        }
     }
 
     public static SquareMatrix Identity(int dimension)
@@ -26,8 +33,9 @@ public class SquareMatrix : Matrix
             temp[i] = 1;
             rows[i] = new Vector(temp);
         }
-        return new SquareMatrix(rows);
+        return new SquareMatrix(false, rows);
     }
+    #endregion
 
     #region Matrix Operations
     public SquareMatrix MultiplyTo(SquareMatrix other)
