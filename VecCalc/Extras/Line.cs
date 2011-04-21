@@ -10,11 +10,6 @@ public class Line : Flat
         get { return subspace.Basis(0); }
     }
 
-    //public bool Contains(IVector v)
-    //{
-    //    return direction.ParallelTo(v.Subtract(anchor));
-    //}
-
     public IVector Point(double t)
     {
         return anchor.Add(direction.Multiply(t));

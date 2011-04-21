@@ -11,4 +11,9 @@ public class Flat
         this.subspace = subspace;
         this.anchor = anchor;
     }
+
+    public bool Contains(IVector v)
+    {
+        return subspace.Contains(v.Subtract(anchor));
+    }
 }

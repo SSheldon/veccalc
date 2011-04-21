@@ -47,7 +47,7 @@ public class SubSpace
         Normalize();
     }
 
-    bool Contains(IVector v)
+    public bool Contains(IVector v)
     {
         //true if orthogonal component = 0
         //also true if the bases + v aren't linearly independent
