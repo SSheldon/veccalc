@@ -14,6 +14,13 @@ public class Matrix
         Array.Copy(rows, this.rows, Height);
     }
 
+    public Matrix(Matrix other)
+    {
+        this.rows = new IVector[other.Height];
+        //it's okay to just copy, vectors are immutable
+        Array.Copy(other.rows, this.rows, Height);
+    }
+
     private static Matrix FromCols(IVector[] cols)
     {
         //all col vectors are same length, right?
