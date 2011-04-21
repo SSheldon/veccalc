@@ -51,6 +51,6 @@ public class SubSpace
     {
         //true if orthogonal component = 0
         //also true if the bases + v aren't linearly independent
-        return v.LinearlyIndependentOf(bases);
+        return !v.LinearlyIndependentOf(bases);
     }
 }
