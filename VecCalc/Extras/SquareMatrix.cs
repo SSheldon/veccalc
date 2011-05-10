@@ -60,18 +60,30 @@ public class SquareMatrix : Matrix
 
     public double Trace()
     {
-        return 0;
+        double sum = 0;
+        for (int i = 0; i < Height; i++)
+        {
+            sum += this[i][i];
+        }
+        return sum;
     }
     #endregion
 
     #region Matrix Properties
     public bool Orthogonal()
     {
-        return false;
+        //return this.Transpose() == this.Inverse()
+        return this.Transpose().MultiplyTo(this) == SquareMatrix.Identity(this.Height);
+    }
+
+    public bool Normal()
+    {
+        return this.Transpose().MultiplyTo(this) == this.MultiplyTo(this.Transpose());
     }
 
     public bool Symmetric()
     {
+        //return this == this.Transpose();
         for (int i = 0; i < Height; i++)
             if (!this[i].Equals(Col(i))) return false;
         return true;
@@ -79,7 +91,7 @@ public class SquareMatrix : Matrix
 
     public bool Invertible()
     {
-        return false;
+        return this.Determinant() == 0;
     }
 
     public bool Diagonal()
