@@ -64,11 +64,16 @@ public class Matrix
         get { return rows[row]; }
     }
 
+    public double this[int row, int col]
+    {
+        get { return this[row][col]; }
+    }
+
     public IVector Col(int col)
     {
         double[] temp = new double[Height];
         for (int i = 0; i < temp.Length; i++)
-            temp[i] = rows[i][col];
+            temp[i] = this[i][col];
         return new Vector(temp);
     }
     #endregion
