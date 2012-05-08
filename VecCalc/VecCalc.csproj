@@ -38,6 +38,7 @@
     <Compile Include="Extras\Flat.cs" />
     <Compile Include="Extras\Line.cs" />
     <Compile Include="Extras\Matrix.cs" />
+    <Compile Include="Extras\Quaternion.cs" />
     <Compile Include="Extras\SquareMatrix.cs" />
     <Compile Include="Extras\SubSpace.cs" />
     <Compile Include="IVector.cs" />
